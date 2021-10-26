@@ -10,3 +10,7 @@ env_logger = "*"
 alcoholic_jwt = "*"
 lazy_static = "*"
 actix-web-httpauth = "*"
+openidconnect = "*"
+dotenv = "*"
+reqwest = { version = "*", features = ["json"] }
+serde_json = "*"

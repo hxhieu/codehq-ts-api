@@ -10,6 +10,10 @@ async fn main() -> std::io::Result<()> {
     use actix_web::{middleware::Logger, web, App, HttpServer};
     use actix_web_httpauth::middleware::HttpAuthentication;
 
+    // TODO: Debug mode
+    std::env::set_var("RUST_LOG", "info");
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     env_logger::init();
 
     HttpServer::new(|| {

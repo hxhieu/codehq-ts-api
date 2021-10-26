@@ -9,12 +9,10 @@ pub async fn bearer_jwt(
     credentials: BearerAuth,
 ) -> Result<ServiceRequest, Error> {
     match jwks::get_jwks().await {
-        Some(key_store) => match jwks::validate_token(credentials.token(), &key_store).await {
+        Ok(key_store) => match jwks::validate_token(credentials.token(), &key_store).await {
             Ok(_) => Ok(req),
             Err(err) => Err(error::ErrorUnauthorized(err)),
         },
-        None => Err(error::ErrorInternalServerError(
-            "Cannot validate the token, JWKS is not set",
-        )),
+        Err(err) => Err(error::ErrorInternalServerError(err)),
     }
 }
