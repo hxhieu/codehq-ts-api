@@ -1,5 +1,4 @@
-use actix_web::dev::ServiceRequest;
-use actix_web::{error, Error};
+use actix_web::{dev::ServiceRequest, error, Error};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 
 use super::jwks;

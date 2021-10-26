@@ -2,11 +2,13 @@ extern crate alcoholic_jwt;
 
 use alcoholic_jwt::JWKS;
 use dotenv::dotenv;
-use openidconnect::core::CoreProviderMetadata;
-use openidconnect::reqwest::http_client;
-use openidconnect::IssuerUrl;
-use std::env;
-use std::sync::RwLock;
+use openidconnect::{
+    core::CoreProviderMetadata,
+    http::{HeaderMap, Method},
+    reqwest::http_client,
+    HttpRequest, IssuerUrl,
+};
+use std::{env, str, sync::RwLock};
 
 // https://stackoverflow.com/questions/61159698/update-re-initialize-a-var-defined-in-lazy-static
 lazy_static! {
@@ -14,36 +16,48 @@ lazy_static! {
 }
 
 pub async fn get_jwks() -> Result<JWKS, String> {
+    // Get from the cache first
     if let Some(key_store) = KEY_STORE.read().unwrap().to_owned() {
         return Ok(key_store);
     }
 
-    dotenv().ok();
-    let authority_url = env::var("CODEHQ_TS_API_AUTH_AUTHORITY").unwrap_or("".to_string());
-    let client_id = env::var("CODEHQ_TS_API_AUTH_CLIENT_ID").unwrap_or("".to_string());
-    if authority_url.len() == 0 || client_id.len() == 0 {
-        return Err("Auth authority is not configured properly".to_string());
-    }
+    // Otherwise fetch the JWKS for the 1st time
 
-    let issuer_url = IssuerUrl::new(authority_url).expect("Invalid issuer URL");
-    let provider_metadata = CoreProviderMetadata::discover(&issuer_url, http_client);
-    match provider_metadata {
-        Ok(metadata) => {
-            let jwks_url = metadata.jwks_uri().to_string();
-            let client = reqwest::Client::new();
-            match client.get(jwks_url).send().await {
-                Ok(res) => match res.json::<JWKS>().await {
-                    Ok(key_store) => {
-                        // let mut new_key_store = KEY_STORE.write().unwrap();
-                        // *new_key_store = Some(key_store);
-                        Ok(key_store)
+    dotenv().ok(); // Read from .env if there is one
+
+    match IssuerUrl::new(env::var("CODEHQ_TS_API_AUTH_AUTHORITY").unwrap_or("".to_string())) {
+        Ok(authority_url) => {
+            let provider_metadata = CoreProviderMetadata::discover(&authority_url, http_client);
+            match provider_metadata {
+                Ok(metadata) => {
+                    // HACK: Can't the reqwest to work by itself, so
+                    // using openidconnect http_request instead...
+                    let request = HttpRequest {
+                        url: metadata.jwks_uri().url().to_owned(),
+                        method: Method::GET,
+                        headers: HeaderMap::new(),
+                        body: Vec::new(),
+                    };
+                    match http_client(request) {
+                        Ok(res) => {
+                            match serde_json::from_slice::<JWKS>(&res.body) {
+                                Ok(key_store) => {
+                                    // Update the cache
+                                    let mut new_key_store = KEY_STORE.write().unwrap();
+                                    *new_key_store = Some(key_store.clone());
+                                    // Return cache value
+                                    return Ok(key_store);
+                                }
+                                Err(err) => return Err(err.to_string()),
+                            }
+                        }
+                        Err(err) => return Err(err.to_string()),
                     }
-                    Err(_) => Err("Failed to deserialise JWKS".to_string()),
-                },
-                Err(_) => Err("Failed to fetch JWKS".to_string()),
+                }
+                Err(err) => return Err(err.to_string()),
             }
         }
-        Err(_) => return Err("Failed to fetch authority metadata".to_string()),
+        Err(err) => return Err(err.to_string()),
     }
 }
 
@@ -51,6 +65,7 @@ pub async fn validate_token(token: &str, key_store: &JWKS) -> Result<bool, Strin
     if token.len() == 0 {
         return Err("Bearer token is required".to_string());
     }
+    print!("{:?}", key_store);
     // TODO: Actually using the key store
     Ok(true)
 }
