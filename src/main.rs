@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod auth;
+mod codehq_ts_cli;
 mod config;
 mod routes;
 
@@ -27,7 +28,8 @@ async fn main() -> std::io::Result<()> {
                 // Prefix /api
                 web::scope("/api")
                     // Routes
-                    .service(routes::me::weekly_timesheet::get),
+                    .service(routes::me::weekly_timesheet::get_now)
+                    .service(routes::me::weekly_timesheet::get_date),
             )
     })
     .bind("127.0.0.1:8080")?
