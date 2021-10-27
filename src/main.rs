@@ -2,6 +2,7 @@
 extern crate lazy_static;
 
 mod auth;
+mod config;
 mod routes;
 
 #[actix_web::main]
