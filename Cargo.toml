@@ -5,5 +5,13 @@ edition = "2018"
 
 [dependencies]
 actix-web = "*"
-log = "*"
+actix-web-httpauth = "*"
+alcoholic_jwt = "*"
+dotenv = "*"
 env_logger = "*"
+envy = "*"
+lazy_static = "*"
+log = "*"
+openidconnect = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"

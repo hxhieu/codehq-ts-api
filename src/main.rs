@@ -1,12 +1,26 @@
-mod routes;
+#[macro_use]
+extern crate lazy_static;
 
-use actix_web::{middleware::Logger, web, App, HttpServer};
+mod auth;
+mod config;
+mod routes;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    use crate::auth::middleware::bearer_jwt;
+    use actix_web::{middleware::Logger, web, App, HttpServer};
+    use actix_web_httpauth::middleware::HttpAuthentication;
+
+    // TODO: Debug mode
+    std::env::set_var("RUST_LOG", "info");
+    std::env::set_var("RUST_BACKTRACE", "1");
+
     env_logger::init();
+
     HttpServer::new(|| {
         App::new()
+            // Token bearer middleware
+            .wrap(HttpAuthentication::bearer(bearer_jwt))
             // Logger middleware
             .wrap(Logger::default())
             .service(
