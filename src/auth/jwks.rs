@@ -29,7 +29,7 @@ pub async fn get_jwks() -> Result<JWKS, String> {
     dotenv().ok(); // Read from .env if there is one
 
     let authority_url =
-        IssuerUrl::new(env::var("CODEHQ_TS_API_AUTH_AUTHORITY").unwrap_or("".to_string()))
+        IssuerUrl::new(env::var("CODEHQ_TS_API_AUTH_AUTHORITY").unwrap_or_else(|_| "".to_string()))
             .map_err(|err| format!("Invalid authority URL. {}", err))?;
 
     let metadata = CoreProviderMetadata::discover(&authority_url, http_client)
@@ -52,12 +52,13 @@ pub async fn get_jwks() -> Result<JWKS, String> {
     // Update the cache
     let mut new_key_store = KEY_STORE.write().unwrap();
     *new_key_store = Some(key_store.clone());
+
     // Return cache value
-    return Ok(key_store);
+    Ok(key_store)
 }
 
 pub async fn validate_token(token: &str, key_store: &JWKS) -> Result<bool, String> {
-    if token.len() == 0 {
+    if token.is_empty() {
         return Err("Bearer token is required".to_string());
     }
     print!("{:?}", key_store);
