@@ -1,6 +1,6 @@
 extern crate alcoholic_jwt;
 
-use crate::config;
+use crate::config::{self, Config};
 use alcoholic_jwt::{token_kid, validate, Validation, ValidationError, JWKS};
 use log::{error, info};
 use openidconnect::{
@@ -9,14 +9,24 @@ use openidconnect::{
     reqwest::http_client,
     HttpRequest, IssuerUrl,
 };
-use std::{str, sync::RwLock};
+use std::{collections::HashMap, str, sync::RwLock};
+
+use super::token_claims::TokenClaims;
 
 // https://stackoverflow.com/questions/61159698/update-re-initialize-a-var-defined-in-lazy-static
 lazy_static! {
     static ref KEY_STORE: RwLock<Option<JWKS>> = RwLock::new(None);
 }
 
-pub async fn get_jwks() -> Result<JWKS, String> {
+/// Try to load the config from the passed in configuration, if None the load it from the cache
+fn load_config(auth_config: Option<&Config>) -> Result<Config, String> {
+    match auth_config {
+        Some(cfg) => Ok(cfg.clone()),
+        None => Ok(config::get().map_err(|err| format!("Failed to load configuration. {}", err))?),
+    }
+}
+
+pub async fn get_jwks(auth_config: Option<&Config>) -> Result<JWKS, String> {
     // Get from the cache first
     if let Some(key_store) = KEY_STORE.read().unwrap().to_owned() {
         return Ok(key_store);
@@ -26,7 +36,7 @@ pub async fn get_jwks() -> Result<JWKS, String> {
 
     info!("No JWKS in cache, fetch it now");
 
-    let config = config::get().map_err(|err| format!("Failed to load configuration. {}", err))?;
+    let config = load_config(auth_config).map_err(|e| e)?;
 
     let authority_url = IssuerUrl::new(config.auth_issuer)
         .map_err(|err| format!("Invalid authority URL. {}", err))?;
@@ -56,12 +66,16 @@ pub async fn get_jwks() -> Result<JWKS, String> {
     Ok(key_store)
 }
 
-pub async fn validate_token(token: &str, key_store: &JWKS) -> Result<bool, String> {
+pub async fn validate_token(
+    token: &str,
+    key_store: &JWKS,
+    auth_config: Option<&Config>,
+) -> Result<TokenClaims, String> {
     if token.is_empty() {
         return Err("Missing bearer token.".to_string());
     }
 
-    let config = config::get().map_err(|err| format!("Failed to load configuration. {}", err))?;
+    let config = load_config(auth_config).map_err(|e| e)?;
 
     let validations = vec![
         Validation::SubjectPresent,
@@ -81,7 +95,7 @@ pub async fn validate_token(token: &str, key_store: &JWKS) -> Result<bool, Strin
     })?;
 
     if let Some(jwk) = key_store.find(&kid.unwrap()) {
-        validate(token, jwk, validations).map_err(|err| match err {
+        let result = validate(token, jwk, validations).map_err(|err| match err {
             ValidationError::InvalidBase64(derr) => {
                 error!("{} {}", error_message, derr);
                 error_message
@@ -108,7 +122,17 @@ pub async fn validate_token(token: &str, key_store: &JWKS) -> Result<bool, Strin
             }
             _ => error_message,
         })?;
-        Ok(true)
+        let mut claims = HashMap::new();
+        for (key, value) in result.claims.as_object().unwrap() {
+            claims.insert(
+                key.to_string(),
+                match value.as_str() {
+                    Some(v) => v.to_string(),
+                    None => "".to_string(),
+                },
+            );
+        }
+        Ok(TokenClaims::new(result))
     } else {
         error!("{} {}", error_message, "Specified key not found in set.");
         Err(error_message.to_string())

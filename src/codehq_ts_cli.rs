@@ -15,11 +15,7 @@ fn exec(command: &str, args: Vec<&str>) -> Result<String, String> {
         .read()
     {
         Ok(stdout) => Ok(stdout),
-        Err(err) => Err(format!(
-            "Failed to execute command '{}'. {}",
-            command,
-            err.to_string()
-        )),
+        Err(err) => Err(format!("Failed to execute command '{}'. {}", command, err)),
     }
 }
 
