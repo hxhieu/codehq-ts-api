@@ -11,6 +11,7 @@ lazy_static! {
 pub struct Config {
     pub auth_issuer: String,
     pub auth_client_id: String,
+    pub auth_allowed_domains: Vec<String>,
 }
 
 pub fn get() -> Result<Config, String> {

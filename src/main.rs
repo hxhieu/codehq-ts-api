@@ -2,8 +2,10 @@
 extern crate lazy_static;
 
 mod auth;
+mod codehq_ts_cli;
 mod config;
 mod routes;
+mod state;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -19,15 +21,16 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         App::new()
-            // Token bearer middleware
-            .wrap(HttpAuthentication::bearer(bearer_jwt))
             // Logger middleware
             .wrap(Logger::default())
             .service(
                 // Prefix /api
                 web::scope("/api")
+                    // Token bearer middleware
+                    .wrap(HttpAuthentication::bearer(bearer_jwt))
                     // Routes
-                    .service(routes::me::weekly_timesheet::get),
+                    .service(routes::me::weekly_timesheet::get_now)
+                    .service(routes::me::weekly_timesheet::get_date),
             )
     })
     .bind("127.0.0.1:8080")?
