@@ -1,17 +1,18 @@
 use duct::cmd;
-use log::info;
+// use log::info;
 
 fn exec(command: &str, args: Vec<&str>) -> Result<String, String> {
     match cmd(command, args)
-        .before_spawn(|cmd| {
-            info!(
-                // TODO: Better print formatting?
-                "SpawningChildCommand> {:?} {:?}",
-                cmd.get_program(),
-                cmd.get_args()
-            );
-            Ok(())
-        })
+        // .before_spawn(|cmd| {
+        //     // TODO: This requires nightly
+        //     info!(
+        //         // TODO: Better print formatting?
+        //         "SpawningChildCommand> {:?} {:?}",
+        //         cmd.get_program(),
+        //         cmd.get_args()
+        //     );
+        //     Ok(())
+        // })
         .read()
     {
         Ok(stdout) => Ok(stdout),
