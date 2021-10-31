@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use serde::Deserialize;
 use std::sync::RwLock;
 
@@ -20,8 +19,6 @@ pub fn get() -> Result<Config, String> {
         return Ok(cfg);
     }
 
-    // Load from env
-    dotenv().ok();
     match envy::prefixed("CODEHQ_TS_API_").from_env::<Config>() {
         Ok(cfg) => {
             let mut new_config = CONFIG.write().unwrap();

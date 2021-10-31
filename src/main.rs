@@ -12,10 +12,10 @@ async fn main() -> std::io::Result<()> {
     use crate::auth::middleware::bearer_jwt;
     use actix_web::{middleware::Logger, web, App, HttpServer};
     use actix_web_httpauth::middleware::HttpAuthentication;
+    use dotenv::dotenv;
 
-    // TODO: Debug mode
-    std::env::set_var("RUST_LOG", "info");
-    std::env::set_var("RUST_BACKTRACE", "1");
+    // Load env vars
+    dotenv().ok();
 
     env_logger::init();
 
