@@ -37,17 +37,22 @@ pub async fn get_jwks(auth_config: Option<&Config>) -> Result<JWKS, String> {
     info!("No JWKS in cache, fetch it now");
 
     let config = load_config(auth_config).map_err(|e| e)?;
-
     let authority_url = IssuerUrl::new(config.auth_issuer)
         .map_err(|err| format!("Invalid authority URL. {}", err))?;
+    let metadata = CoreProviderMetadata::discover(&authority_url, http_client).map_err(|err| {
+        format!(
+            "Failed to fetch authority metadata, {:?}. {}",
+            authority_url, err,
+        )
+    })?;
+    let url = metadata.jwks_uri().url().to_owned();
 
-    let metadata = CoreProviderMetadata::discover(&authority_url, http_client)
-        .map_err(|err| format!("Failed to fetch authority metadata. {}", err))?;
+    println!("Keys URL: {}", url);
 
-    // HACK: Can't the reqwest to work by itself, so
+    // HACK: Can't get the reqwest to work by itself, so
     // using openidconnect http_request instead...
     let request = HttpRequest {
-        url: metadata.jwks_uri().url().to_owned(),
+        url,
         method: Method::GET,
         headers: HeaderMap::new(),
         body: Vec::new(),
