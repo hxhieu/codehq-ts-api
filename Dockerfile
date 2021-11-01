@@ -26,3 +26,4 @@ FROM gcr.io/distroless/base
 COPY --from=rust-builder /tmp/app/target/x86_64-unknown-linux-musl/release/codehq-ts-api /usr/local/bin/codehq-ts-api
 COPY --from=go-builder /app/src/codehq-ts /usr/local/bin/codehq-ts
 ENTRYPOINT [ "codehq-ts-api" ]
+EXPOSE 8080
