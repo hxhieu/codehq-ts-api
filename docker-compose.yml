@@ -2,7 +2,7 @@ version: '3'
 
 services:
   codehq-ts-api:
-    image: 'codehq-ts-api:local'
+    image: 'hughdev.azurecr.io/codehq-ts-api'
     restart: 'no'
     # these read from the .env file next to docker-compose.yml
     environment:
