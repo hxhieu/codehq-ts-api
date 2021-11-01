@@ -41,8 +41,12 @@ pub async fn get_jwks(auth_config: Option<&Config>) -> Result<JWKS, String> {
     let authority_url = IssuerUrl::new(config.auth_issuer)
         .map_err(|err| format!("Invalid authority URL. {}", err))?;
 
-    let metadata = CoreProviderMetadata::discover(&authority_url, http_client)
-        .map_err(|err| format!("Failed to fetch authority metadata. {}", err))?;
+    let metadata = CoreProviderMetadata::discover(&authority_url, http_client).map_err(|err| {
+        format!(
+            "Failed to fetch authority metadata, URL: {:?}. {}",
+            authority_url, err,
+        )
+    })?;
 
     // HACK: Can't the reqwest to work by itself, so
     // using openidconnect http_request instead...
