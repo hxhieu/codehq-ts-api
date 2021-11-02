@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
 
 // https://stackoverflow.com/questions/61159698/update-re-initialize-a-var-defined-in-lazy-static
@@ -6,10 +6,13 @@ lazy_static! {
     static ref CONFIG: RwLock<Option<Config>> = RwLock::new(None);
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
+    #[serde(rename(serialize = "issuer"))]
     pub auth_issuer: String,
+    #[serde(rename(serialize = "client_id"))]
     pub auth_client_id: String,
+    #[serde(skip_serializing)]
     pub auth_allowed_domains: Vec<String>,
 }
 

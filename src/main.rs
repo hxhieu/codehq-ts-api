@@ -23,6 +23,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // Logger middleware
             .wrap(Logger::default())
+            .service(routes::client_config::get_client_config)
             .service(
                 // Prefix /api
                 web::scope("/api")
