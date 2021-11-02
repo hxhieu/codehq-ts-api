@@ -14,6 +14,10 @@ pub struct Config {
     pub auth_client_id: String,
     #[serde(skip_serializing)]
     pub auth_allowed_domains: Vec<String>,
+    #[serde(skip_serializing)]
+    pub cors_allowed_origins: Vec<String>,
+    #[serde(skip_serializing)]
+    pub cors_allowed_methods: Vec<String>,
 }
 
 pub fn get() -> Result<Config, String> {

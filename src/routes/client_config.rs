@@ -18,10 +18,10 @@ async fn get_client_config(req: HttpRequest) -> impl Responder {
                     auth: cfg,
                     // Get request host
                     api_url: match req.headers().get("host") {
-                        Some(host) => match host.to_str().ok() {
-                            Some(host_str) => Some(format!("{}/api", host_str)),
-                            _ => None,
-                        },
+                        Some(host) => host
+                            .to_str()
+                            .ok()
+                            .map(|host_str| format!("{}/api", host_str)),
                         _ => None,
                     },
                 }),
