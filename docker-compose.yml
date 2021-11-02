@@ -1,17 +1,19 @@
-version: '3'
+version: "3"
 
 services:
   codehq-ts-api:
-    image: 'hughdev.azurecr.io/codehq-ts-api'
-    restart: 'no'
+    image: "hughdev.azurecr.io/codehq-ts-api"
+    restart: "no"
     # these read from the .env file next to docker-compose.yml
     environment:
       - RUST_LOG
       - RUST_BACKTRACE
+      - CODEHQ_TS_API_CORS_ALLOWED_ORIGINS
+      - CODEHQ_TS_API_CORS_ALLOWED_METHODS
       - CODEHQ_TS_API_AUTH_ISSUER
       - CODEHQ_TS_API_AUTH_CLIENT_ID
       - CODEHQ_TS_API_AUTH_ALLOWED_DOMAINS
       - CODEHQ_TS_TIMESHEET_DSN
       - CODEHQ_TS_PIMP_DSN
     ports:
-      - '8080:8080'
+      - "8080:8080"
